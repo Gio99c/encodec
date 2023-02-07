@@ -159,10 +159,14 @@ class EncodecModel(nn.Module):
             scale = None
 
         emb = self.encoder(x)
+        
+        return emb, scale
+    
+    def quantize(self, emb):
         codes = self.quantizer.encode(emb, self.frame_rate, self.bandwidth)
         codes = codes.transpose(0, 1)
         # codes is [B, K, T], with T frames, K nb of codebooks.
-        return codes, scale
+        return codes
 
     def decode(self, encoded_frames: tp.List[EncodedFrame]) -> torch.Tensor:
         """Decode the given frames into a waveform.
@@ -178,7 +182,8 @@ class EncodecModel(nn.Module):
         return _linear_overlap_add(frames, self.segment_stride or 1)
 
     def _decode_frame(self, encoded_frame: EncodedFrame) -> torch.Tensor:
-        codes, scale = encoded_frame
+        emb, scale = encoded_frame
+        codes = self.quantize(emb)
         codes = codes.transpose(0, 1)
         emb = self.quantizer.decode(codes)
         out = self.decoder(emb)
