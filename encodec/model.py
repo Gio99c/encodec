@@ -158,11 +158,9 @@ class EncodecModel(nn.Module):
         else:
             scale = None
 
-        emb = self.encoder(x)
-        normalizer = torch.max(torch.abs(emb))
-        emb /= normalizer
+        emb = self.encoder(x) / 15
         
-        return emb, scale, normalizer.view(-1, 1)
+        return emb, scale
     
     def quantize(self, emb):
         codes = self.quantizer.encode(emb, self.frame_rate, self.bandwidth)
@@ -184,8 +182,8 @@ class EncodecModel(nn.Module):
         return _linear_overlap_add(frames, self.segment_stride or 1)
 
     def _decode_frame(self, encoded_frame: EncodedFrame) -> torch.Tensor:
-        emb, scale, normalizer = encoded_frame
-        emb = emb * normalizer
+        emb, scale = encoded_frame
+        emb = emb * 15
         #codes = self.quantize(emb)
         #codes = codes.transpose(0, 1)
         #emb = self.quantizer.decode(codes)
