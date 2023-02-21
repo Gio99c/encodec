@@ -162,7 +162,7 @@ class EncodecModel(nn.Module):
         normalizer = torch.max(torch.abs(emb))
         emb /= normalizer
         
-        return emb, scale, normalizer
+        return emb, scale, normalizer.view(-1, 1)
     
     def quantize(self, emb):
         codes = self.quantizer.encode(emb, self.frame_rate, self.bandwidth)
